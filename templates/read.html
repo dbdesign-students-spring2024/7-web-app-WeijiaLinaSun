@@ -2,19 +2,28 @@
 
 {% block container %}
 <h2>Read</h2>
-<p>This page shows information pulled from a MongoDB database collection.
-        
+<p>This page displays information about all books extracted from the MongoDB database collection.
+
+
+<form method="POST" action="{{ url_for('search') }}">
+    <input type="text" id="search1" name="search1" placeholder="Search books">
+    <input type="submit" name="post-btn" value="submit" />
+</form>
+
+
     {% for doc in docs %}
     <div>
         <hr class="solid">
+
         <p class="post">
-            Posted by {{doc.name}} at {{ doc.created_at.strftime("%H:%M on %d %B %Y") }}
+            Book Name：{{ doc.bkname }}<br/>
+            Student Name：{{ doc.fname }}<br/>
+            Student ID：{{ doc.stid }}<br/>
+            Borrowing State：{{ doc.book_action }}<br/>
+            Date: {{ doc.created_at.strftime("%H:%M on %d %B %Y") }}
             <br/>
             <a href="{{ url_for('edit',mongoid=doc._id)}}">Edit</a> | <a href="{{ url_for('delete',mongoid=doc._id)}}">Delete</a>
             <br/>
-        </p>
-        <p>
-            {{ doc.message }}
         </p>
             
     </div>

@@ -8,10 +8,10 @@ import datetime
 from flask import Flask, render_template, request, redirect, url_for, make_response
 
 # import logging
-import sentry_sdk
-from sentry_sdk.integrations.flask import (
-    FlaskIntegration,
-)  # delete this if not using sentry.io
+# import sentry_sdk
+# from sentry_sdk.integrations.flask import (
+#     FlaskIntegration,
+# )  # delete this if not using sentry.io
 
 # from markupsafe import escape
 import pymongo
@@ -26,18 +26,18 @@ load_dotenv(override=True)  # take environment variables from .env.
 # initialize Sentry for help debugging... this requires an account on sentrio.io
 # you will need to set the SENTRY_DSN environment variable to the value provided by Sentry
 # delete this if not using sentry.io
-sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
-    # enable_tracing=True,
-    # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-    traces_sample_rate=1.0,
-    # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-    # We recommend adjusting this value in production.
-    profiles_sample_rate=1.0,
-    integrations=[FlaskIntegration()],
-    traces_sample_rate=1.0,
-    send_default_pii=True,
-)
+# sentry_sdk.init(
+#     dsn="https://172014382fd0456b86894e854b3f5c45@o4507055869394944.ingest.us.sentry.io/4507055875620864",
+#     # enable_tracing=True,
+#     # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+#     traces_sample_rate=1.0,
+#     # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+#     # We recommend adjusting this value in production.
+#     # profiles_sample_rate=1.0,
+#     integrations=[FlaskIntegration()],
+#     # traces_sample_rate=1.0,
+#     send_default_pii=True,
+# )
 
 # instantiate the app using sentry for debugging
 app = Flask(__name__)
@@ -49,7 +49,7 @@ app = Flask(__name__)
 try:
     cxn = pymongo.MongoClient(os.getenv("MONGO_URI"))
     db = cxn[os.getenv("MONGO_DBNAME")]  # store a reference to the selected database
-
+    print(db)
     # verify the connection works by pinging the database
     cxn.admin.command("ping")  # The ping command is cheap and does not require auth.
     print(" * Connected to MongoDB!")  # if we get here, the connection worked!
@@ -57,7 +57,7 @@ except ConnectionFailure as e:
     # catch any database errors
     # the ping command failed, so the connection is not available.
     print(" * MongoDB connection error:", e)  # debug
-    sentry_sdk.capture_exception(e)  # send the error to sentry.io. delete if not using
+    # sentry_sdk.capture_exception(e)  # send the error to sentry.io. delete if not using
     sys.exit(1)  # this is a catastrophic error, so no reason to continue to live
 
 
@@ -72,16 +72,29 @@ def home():
     """
     return render_template("index.html")
 
-
 @app.route("/read")
 def read():
     """
     Route for GET requests to the read page.
     Displays some information for the user with links to other pages.
     """
-    docs = db.exampleapp.find({}).sort(
+    docs = db.books.find({}).sort(
         "created_at", -1
     )  # sort in descending order of created_at timestamp
+    return render_template("read.html", docs=docs)  # render the read template
+
+
+@app.route('/search', methods=['POST'])
+def search():
+    search_query = request.form['search1']
+    print(search_query)
+    docs = db.books.find({
+        "bkname": {
+            "$regex": search_query,
+            "$options": "i"
+        }
+    }).sort("created_at", -1)
+
     return render_template("read.html", docs=docs)  # render the read template
 
 
@@ -100,12 +113,14 @@ def create_post():
     Route for POST requests to the create page.
     Accepts the form submission data for a new document and saves the document to the database.
     """
-    name = request.form["fname"]
-    message = request.form["fmessage"]
-
+    fname = request.form["fname"]
+    stid = request.form["stid"]
+    bkname = request.form["bkname"]
+    book_action = request.form.get('book_action')
+    # print(book_action)
     # create a new document with the data the user entered
-    doc = {"name": name, "message": message, "created_at": datetime.datetime.utcnow()}
-    db.exampleapp.insert_one(doc)  # insert a new document
+    doc = {"fname": fname, "stid": stid, "bkname": bkname, "book_action": book_action, "created_at": datetime.datetime.utcnow()}
+    db.books.insert_one(doc)  # insert a new document
 
     return redirect(
         url_for("read")
@@ -121,7 +136,7 @@ def edit(mongoid):
     Parameters:
     mongoid (str): The MongoDB ObjectId of the record to be edited.
     """
-    doc = db.exampleapp.find_one({"_id": ObjectId(mongoid)})
+    doc = db.books.find_one({"_id": ObjectId(mongoid)})
     return render_template(
         "edit.html", mongoid=mongoid, doc=doc
     )  # render the edit template
@@ -136,17 +151,21 @@ def edit_post(mongoid):
     Parameters:
     mongoid (str): The MongoDB ObjectId of the record to be edited.
     """
-    name = request.form["fname"]
-    message = request.form["fmessage"]
+    fname = request.form["fname"]
+    stid = request.form["stid"]
+    bkname = request.form["bkname"]
+    book_action = request.form.get('book_action')
 
     doc = {
         # "_id": ObjectId(mongoid),
-        "name": name,
-        "message": message,
+        "fname": fname,
+        "stid": stid,
+        "bkname": bkname,
+        "book_action": book_action,
         "created_at": datetime.datetime.utcnow(),
     }
 
-    db.exampleapp.update_one(
+    db.books.update_one(
         {"_id": ObjectId(mongoid)}, {"$set": doc}  # match criteria
     )
 
@@ -164,7 +183,7 @@ def delete(mongoid):
     Parameters:
     mongoid (str): The MongoDB ObjectId of the record to be deleted.
     """
-    db.exampleapp.delete_one({"_id": ObjectId(mongoid)})
+    db.books.delete_one({"_id": ObjectId(mongoid)})
     return redirect(
         url_for("read")
     )  # tell the web browser to make a request for the /read route.
@@ -185,7 +204,7 @@ def webhook():
     process = subprocess.Popen(["chmod", "a+x", "flask.cgi"], stdout=subprocess.PIPE)
     chmod_output = process.communicate()[0]
     # send a success response
-    response = make_response(f"output: {pull_output}", 200)
+    response = make_response(pull_output,200)
     response.mimetype = "text/plain"
     return response
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Flask-MongoDB Example App</title>
+    <title>Library Management System App</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -10,11 +10,11 @@
   <body>
     <div class="container">
       <header>
-        <h1>Flask-MongoDB Example App</h1>
+        <h1>Library Management System App</h1>
         <p>
           <a href="{{ url_for('home')}}">Home</a> |
-          <a href="{{ url_for('read')}}">All posts</a> |
-          <a href="{{ url_for('create')}}">Create a post</a>
+          <a href="{{ url_for('read')}}">All records</a> |
+          <a href="{{ url_for('create')}}">Create a borrow/return record</a>
         </p>
       </header>
       <main>{% block container %} {% endblock %}</main>
