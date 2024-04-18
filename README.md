@@ -6,7 +6,7 @@ Library Management System
 
 ## a simple description of your app
 
-This application is a library management system that implements CRUD operations. Specifically, it realizes the management of borrowed books, can add and delete the records of book borrowing and returning, and can also modify the records of book borrowing. As well as help people search for books, so that people can quickly find the books they want to find. Also, I added a simple flask-login module to the system for user login and logout.
+This application is a library management system that implements CRUD operations. Specifically, it realizes the management of borrowed books, can add and delete the records of book borrowing and returning, and can also modify the records of book borrowing. As well as help people search for books, so that people can quickly find the books they want to find. Also, I added a simple flask-login module to the system for user login and logout. (Username: 11, password: 22)
 
 ## a link to the deployed copy of your app
 
